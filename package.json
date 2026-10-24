@@ -1,0 +1,69 @@
+{
+  "name": "dsh-plugin-session-delete",
+  "version": "0.1.0",
+  "description": "Adds a real, permanent session delete action to the DSH web sidebar.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "assets"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer"
+      ],
+      "platform": "web"
+    },
+    "compatibility": {
+      "dsh": ">=0.2.1-rc.1 <0.3.0-0"
+    }
+  },
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.1 <0.3.0-0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "node build.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wooxi/dsh-session-delete.git"
+  },
+  "homepage": "https://github.com/wooxi/dsh-session-delete#readme",
+  "bugs": {
+    "url": "https://github.com/wooxi/dsh-session-delete/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "session",
+    "delete",
+    "web-ui"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

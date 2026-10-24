@@ -1,0 +1,6 @@
+# Session Delete bundle patch: inserts the host plugin row into the profile.
+# The row name resolves from the profile's node_modules, where
+# `dsh plugin add dsh-plugin-session-delete` installed this package.
+- insert:
+    - id: session-delete
+      name: dsh-plugin-session-delete
