@@ -9,7 +9,7 @@ DSH ships *archive*, not *delete*. This plugin fills that gap: it removes the se
 ## Features
 
 - **Delete session** entry in the sidebar session menu, right after the built-in actions.
-- A native-looking confirmation modal built from the DSH `Modal` primitive and design tokens.
+- A confirmation modal in the Claude / OpenCode visual language, built from the DSH `Modal` primitive and design tokens.
   - Light and dark themes.
   - Red danger action, session title, “cannot be undone” copy.
   - `Esc`, backdrop click, and an explicit close button.
