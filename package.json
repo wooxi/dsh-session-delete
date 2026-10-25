@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-session-delete",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Adds a real, permanent session delete action to the DSH web sidebar.",
   "type": "module",
   "main": "index.js",

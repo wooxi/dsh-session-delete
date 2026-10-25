@@ -57,11 +57,24 @@ function isCurrentSession(sessions, sessionId) {
   )
 }
 
+function currentSessionId(sessions) {
+  const snapshot = sessions.list.getSnapshot()
+  return Object.values(snapshot.byId).find((row) => (row.retainedBy?.mainView ?? 0) > 0)?.id
+}
+
+function workspaceById(ctx, workspaceId) {
+  const snapshot = ctx.get('workspaces')?.list?.getSnapshot?.()
+  return snapshot?.items?.find((workspace) => workspace.workspaceId === workspaceId)
+}
+
+function workspaceSessionIds(ctx, workspaceId) {
+  return workspaceById(ctx, workspaceId)?.sessionIds ?? []
+}
+
 function workspaceIdFor(ctx, sessionId) {
-  const workspaces = ctx.get('workspaces')
-  const snapshot = workspaces?.list?.getSnapshot?.()
-  const item = snapshot?.items?.find((workspace) => workspace.sessionIds.includes(sessionId))
-  return item?.workspaceId
+  const snapshot = ctx.get('workspaces')?.list?.getSnapshot?.()
+  return snapshot?.items?.find((workspace) => workspace.sessionIds.includes(sessionId))
+    ?.workspaceId
 }
 
 function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState }) {
@@ -185,6 +198,124 @@ function DeleteSessionDialog({ ctx, request }) {
   )
 }
 
+function DeleteWorkspaceDialog({ ctx, request }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [total, setTotal] = useState(request.sessionIds.length)
+  const [remaining, setRemaining] = useState(request.sessionIds.length)
+
+  const close = () => {
+    if (busy) return
+    requestStore.set(null)
+    // The official workspace dialog is still awaiting this promise. Rejecting
+    // is the only way to release its pending state, so cancellation surfaces
+    // there as an ordinary delete error instead of a stuck "deleting…" button.
+    request.reject(new Error('已取消删除工作区'))
+  }
+
+  const remove = async () => {
+    if (busy) return
+    // Re-read the account on every attempt: a previous partial failure may
+    // already have detached some sessions, and a retry must not target them.
+    const sessionIds = [...workspaceSessionIds(ctx, request.workspaceId)]
+    const current = currentSessionId(ctx.sessions)
+    setBusy(true)
+    setError(null)
+    setTotal(sessionIds.length)
+    setRemaining(sessionIds.length)
+    try {
+      if (current !== undefined && sessionIds.includes(current)) {
+        // Clear the main view before its session disappears; otherwise the
+        // removal event leaves a "Session unavailable" panel behind.
+        ctx.get('uiWorkspace')?.clearMain?.()
+      }
+      for (const sessionId of sessionIds) {
+        const response = await fetch(ROUTE, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        })
+        // A retry can race a previous partial deletion. An already-gone
+        // session is the desired end state, not a failure.
+        if (!response.ok && response.status !== 404) {
+          throw new Error(await readFailure(response))
+        }
+        setRemaining((count) => Math.max(0, count - 1))
+      }
+      await ctx.sessions.refresh().catch(() => {})
+      await request.commit()
+      requestStore.set(null)
+      request.resolve()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open headless title="删除工作区" onClose={close} className="dsd-modal">
+      <div className="dsd-panel">
+        <header className="dsd-head">
+          <span className="dsd-badge" aria-hidden="true">
+            <IconTrashOutlineRegular size={16} />
+          </span>
+          <div className="dsd-heading">
+            <h2 className="dsd-title">删除工作区</h2>
+            <p className="dsd-kicker">会同时删除其中的所有会话</p>
+          </div>
+          <button
+            type="button"
+            className="dsd-close"
+            aria-label="关闭"
+            title="关闭"
+            disabled={busy}
+            onClick={close}
+          >
+            <IconCloseOutlineRegular size={14} />
+          </button>
+        </header>
+
+        <div className="dsd-content">
+          <p className="dsd-question">
+            确定要删除“{request.title}”及其中的 {total} 个会话吗？
+          </p>
+          <div className="dsd-target" title={request.title}>
+            {request.title}
+          </div>
+          <p className="dsd-note">
+            工作区会从列表中移除，文件夹本身保留；其中的会话记录、消息和附件都会永久删除，无法恢复。
+          </p>
+          {busy ? (
+            <p className="dsd-progress" role="status">
+              正在删除会话…（剩余 {remaining} 个）
+            </p>
+          ) : null}
+          {error !== null ? (
+            <p className="dsd-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="dsd-actions">
+          <Button variant="ghost" disabled={busy} data-modal-autofocus onClick={close}>
+            取消
+          </Button>
+          <Button
+            variant="outline"
+            className="dsd-confirm"
+            disabled={busy}
+            aria-busy={busy}
+            onClick={() => void remove()}
+          >
+            {busy ? '正在删除…' : total > 0 ? `删除工作区及 ${total} 个会话` : '删除工作区'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 const CSS = `
 .dsd-modal.dsd-modal {
   width: min(424px, 100%);
@@ -298,6 +429,13 @@ const CSS = `
   line-height: 18px;
 }
 
+.dsd-progress {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .dsd-error {
   margin: 0;
   padding: 8px 10px;
@@ -351,9 +489,18 @@ export function apply(ctx) {
   })
 
   ctx.slots.inject('shell.overlay', function* () {
-    function SessionDeleteOverlay() {
+    function DeleteOverlay() {
       const request = useSyncExternalStore(requestStore.subscribe, requestStore.get)
       if (request === null) return null
+      if (request.kind === 'workspace') {
+        return (
+          <DeleteWorkspaceDialog
+            key={request.workspaceId}
+            ctx={ctx}
+            request={request}
+          />
+        )
+      }
       return (
         <DeleteSessionDialog
           key={request.sessionId}
@@ -369,7 +516,45 @@ export function apply(ctx) {
         id: 'session-delete',
         order: 500,
       },
-      SessionDeleteOverlay,
+      DeleteOverlay,
     )
   })
+
+  // The shipped workspace browser deletes a Workspace registration and leaves
+  // its Sessions behind as ungrouped rows. Intercept that one command so the
+  // rows disappear together: confirm the real blast radius, delete every
+  // accounted Session through the host route, then let the official delete
+  // proceed. A Workspace without Sessions keeps the original fast path.
+  const workspaces = ctx.get('workspaces')
+  if (workspaces !== undefined && typeof workspaces.delete === 'function') {
+    const originalDelete = workspaces.delete.bind(workspaces)
+    const wrappedDelete = (workspaceId) => {
+      const workspace = workspaceById(ctx, workspaceId)
+      const sessionIds = workspace?.sessionIds ?? []
+      if (sessionIds.length === 0) return originalDelete(workspaceId)
+      return new Promise((resolve, reject) => {
+        requestStore.set({
+          kind: 'workspace',
+          workspaceId,
+          title: workspace?.title || workspace?.path || workspaceId,
+          sessionIds: [...sessionIds],
+          commit: () => originalDelete(workspaceId),
+          resolve,
+          reject,
+        })
+      })
+    }
+    try {
+      workspaces.delete = wrappedDelete
+      ctx.effect(
+        () => () => {
+          if (workspaces.delete === wrappedDelete) workspaces.delete = originalDelete
+        },
+        'session-delete: workspace cascade',
+      )
+    } catch {
+      // A sealed service keeps the official delete semantics; the host still
+      // provides per-session deletion from its row menu.
+    }
+  }
 }

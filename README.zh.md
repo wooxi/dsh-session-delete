@@ -17,6 +17,7 @@ DSH 官方只提供「归档」，没有「删除」。本插件补上这一环�
   - 删除进行中显示忙碌状态。
 - **不整页刷新**：删除成功后通过 `sessions.refresh()` 就地刷新侧栏。
 - **删除当前会话**：清空主视图、保留工作区选择、回到首页；删除后台会话时当前视图不受影响。
+- **删除工作区时连带删除其中的会话**：工作区下仍有关联会话时，删除会打开二次确认并显示会话数量；确认后永久删除该工作区下的所有会话，再移除工作区注册。磁盘上的文件夹本身保留。
 - host 会广播 `api-session/removed`，其它已打开的标签页也会移除该行。
 
 | 浅色 | 深色 |
@@ -58,6 +59,8 @@ dsh plugin remove dsh-plugin-session-delete
 5. 重建会话 header 索引，并广播 `api-session/removed`。
 
 **Client**（`src/client.jsx`）注册菜单项，并通过 `shell.overlay` slot 渲染弹窗。菜单项会在弹窗打开前关闭，弹窗由 overlay 持有，因此不受菜单卸载影响。删除成功后调用 `ctx.sessions.refresh()`，再根据情况通过 `uiWorkspace.openWorkspace` 保留工作区，或清空主视图。
+
+删除工作区时会包装 `ctx.workspaces.delete`：如果工作区下仍有关联会话，先打开级联确认弹窗，确认后通过同一个 host 路由逐个删除会话、刷新会话列表，再调用原始的 `workspaces.delete`。因此文件夹会保留，但会话记录会被永久删除。
 
 ## 安全与数据
 

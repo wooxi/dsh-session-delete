@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- Deleting a workspace now offers a cascade confirmation when the workspace still owns sessions. Confirming permanently deletes every session in it through the existing host route, then removes the workspace registration. The folder on disk is kept.
+
 ## 0.1.0
 
 - Add a **Delete session** action to the sidebar session menu.

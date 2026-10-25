@@ -17,6 +17,7 @@ DSH ships *archive*, not *delete*. This plugin fills that gap: it removes the se
   - Busy state while the request is in flight.
 - **No page reload.** After a successful delete the sidebar refreshes in place through `sessions.refresh()`.
 - **Deleting the active session** clears the main view, keeps the workspace selected, and returns to the home screen. Deleting a background session keeps the current view untouched.
+- **Delete a workspace together with its sessions.** When a workspace still owns sessions, deleting it opens a cascade confirmation that shows the session count. Confirming permanently deletes every session in that workspace, then removes the workspace registration. The folder on disk is left untouched.
 - The host broadcasts `api-session/removed`, so other open tabs drop the row as well.
 
 | Light | Dark |
@@ -58,6 +59,8 @@ dsh plugin remove dsh-plugin-session-delete
 5. Rebuilds the stored-session header index and emits `api-session/removed`.
 
 **Client** (`src/client.jsx`) adds the menu item and renders the dialog through the `shell.overlay` slot. The menu closes before the dialog opens, so the dialog is owned by the overlay and survives menu unmounting. After a successful delete it calls `ctx.sessions.refresh()`, then either keeps the workspace (via `uiWorkspace.openWorkspace`) or clears the main view.
+
+Workspace deletion wraps `ctx.workspaces.delete`. When the workspace still owns sessions, the wrapper opens a cascade confirmation before the official deletion runs. Confirming deletes each session through the same host route, refreshes the session list, and then calls the original `workspaces.delete` — so the folder stays in place while the sessions themselves are gone.
 
 ## Security and data
 
