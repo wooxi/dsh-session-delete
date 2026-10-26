@@ -159,7 +159,7 @@ function DeleteSessionDialog({ ctx, request }) {
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-content", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-question", children: "\u786E\u5B9A\u8981\u6C38\u4E45\u5220\u9664\u8FD9\u4E2A\u4F1A\u8BDD\u5417\uFF1F" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "dsd-target", title: request.title, children: request.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u4F1A\u8BDD\u8BB0\u5F55\u3001\u6D88\u606F\u548C\u9644\u4EF6\u90FD\u4F1A\u4ECE\u672C\u673A\u79FB\u9664\uFF0C\u5220\u9664\u540E\u65E0\u6CD5\u6062\u590D\u3002" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u4F1A\u4ECE\u672C\u673A\u79FB\u9664\uFF0C\u5220\u9664\u540E\u65E0\u6CD5\u6062\u590D\u3002\u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002" }),
       error !== null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-error", role: "alert", children: error }) : null
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-actions", children: [
@@ -250,7 +250,7 @@ function DeleteWorkspaceDialog({ ctx, request }) {
         " \u4E2A\u4F1A\u8BDD\u5417\uFF1F"
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "dsd-target", title: request.title, children: request.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u5DE5\u4F5C\u533A\u4F1A\u4ECE\u5217\u8868\u4E2D\u79FB\u9664\uFF0C\u6587\u4EF6\u5939\u672C\u8EAB\u4FDD\u7559\uFF1B\u5176\u4E2D\u7684\u4F1A\u8BDD\u8BB0\u5F55\u3001\u6D88\u606F\u548C\u9644\u4EF6\u90FD\u4F1A\u6C38\u4E45\u5220\u9664\uFF0C\u65E0\u6CD5\u6062\u590D\u3002" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u5DE5\u4F5C\u533A\u4F1A\u4ECE\u5217\u8868\u4E2D\u79FB\u9664\uFF0C\u6587\u4EF6\u5939\u672C\u8EAB\u4FDD\u7559\uFF1B\u5176\u4E2D\u7684\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u90FD\u4F1A\u6C38\u4E45\u5220\u9664\uFF0C\u65E0\u6CD5\u6062\u590D\u3002 \u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002" }),
       busy ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "dsd-progress", role: "status", children: [
         "\u6B63\u5728\u5220\u9664\u4F1A\u8BDD\u2026\uFF08\u5269\u4F59 ",
         remaining,

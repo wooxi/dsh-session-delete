@@ -171,7 +171,9 @@ function DeleteSessionDialog({ ctx, request }) {
           <div className="dsd-target" title={request.title}>
             {request.title}
           </div>
-          <p className="dsd-note">会话记录、消息和附件都会从本机移除，删除后无法恢复。</p>
+          <p className="dsd-note">
+            会话记录和消息会从本机移除，删除后无法恢复。附件文件按内容去重保留。
+          </p>
           {error !== null ? (
             <p className="dsd-error" role="alert">
               {error}
@@ -283,7 +285,8 @@ function DeleteWorkspaceDialog({ ctx, request }) {
             {request.title}
           </div>
           <p className="dsd-note">
-            工作区会从列表中移除，文件夹本身保留；其中的会话记录、消息和附件都会永久删除，无法恢复。
+            工作区会从列表中移除，文件夹本身保留；其中的会话记录和消息都会永久删除，无法恢复。
+            附件文件按内容去重保留。
           </p>
           {busy ? (
             <p className="dsd-progress" role="status">

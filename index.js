@@ -3,15 +3,15 @@
  *
  * The shipped session controller only archives; there is no delete method on
  * the persistence service either. This host plugin owns the missing lifecycle:
- * detach a live session (emitting `session/disposed` so the projection cache
- * and search index react), unaccount it from its workspace, then remove its
- * on-disk log directory.
+ * drain and detach a live session (emitting `session/disposed` so the
+ * projection cache and search index react), unaccount it from its workspace,
+ * then remove its on-disk log directory.
  *
  * Transport: an exact Fetch route under `/api/` so the shipped Host/Origin
  * fence and browser-cookie authentication apply unchanged (the NPM vhost
  * rewrites Origin for `/api/` only).
  */
-import { rm } from 'node:fs/promises'
+import { rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, sep } from 'node:path'
 
@@ -19,6 +19,13 @@ export const name = 'session-delete'
 export const inject = ['connection', 'sessions', 'sessionPersistence', 'workspaceRegistry']
 
 const ROUTE = '/api/dsh/session-delete'
+
+/**
+ * A workspace cascade issues one request per session. Rebuilding the header
+ * index on every one of them re-stats every stored session, which makes the
+ * cascade quadratic; a short window collapses the burst into one rebuild.
+ */
+const REBUILD_DELAY_MS = 300
 
 /** Encode one path segment exactly as the JSONL persistence backend does. */
 function encodeSegment(raw) {
@@ -60,7 +67,65 @@ function sessionsRoot() {
   return join(home, 'sessions')
 }
 
+/** Yield one macrotask so a pending writer `close()` can finish its drain. */
+function nextMacrotask() {
+  return new Promise((resolve) => setImmediate(resolve))
+}
+
+function messageOf(error) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 export function apply(ctx) {
+  let rebuildTimer = null
+
+  async function rebuildHeaderIndex() {
+    try {
+      await ctx.workspaceRegistry.replaceHeaderIndex(await ctx.workspaceRegistry.listStoredHeaders())
+    } catch (error) {
+      // The next startup rebuilds it anyway; this line is what makes the
+      // difference visible instead of silent.
+      ctx.logger.warn(`session-delete: header index rebuild failed: ${messageOf(error)}`)
+    }
+  }
+
+  function scheduleIndexRebuild() {
+    if (rebuildTimer !== null) return
+    rebuildTimer = setTimeout(() => {
+      rebuildTimer = null
+      void rebuildHeaderIndex()
+    }, REBUILD_DELAY_MS)
+    rebuildTimer.unref?.()
+  }
+
+  /**
+   * Remove one log directory without hiding the outcome.
+   *
+   * `force` stays off so a wrong path — a storage root that moved, a header
+   * whose cwd no longer resolves — surfaces as ENOENT rather than a silent
+   * success. The second pass covers a writer whose `close()` drain lands after
+   * the first `rm` and recreates the directory.
+   */
+  async function removeLogDir(dir) {
+    let logMissing = false
+    try {
+      await rm(dir, { recursive: true, force: false })
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') logMissing = true
+      else throw error
+    }
+    await nextMacrotask()
+    const revived = await stat(dir).then(
+      () => true,
+      () => false,
+    )
+    if (revived) {
+      ctx.logger.warn(`session-delete: log directory reappeared after removal: ${dir}`)
+      await rm(dir, { recursive: true, force: true })
+    }
+    return logMissing
+  }
+
   async function deleteSession(request) {
     let body
     try {
@@ -79,9 +144,23 @@ export function apply(ctx) {
     if (snapshot === undefined) return Response.json({ error: 'session not found' }, { status: 404 })
     const cwd = snapshot.header.cwd
 
+    const live = ctx.sessions.get(sessionId)
+    const wasLive = live !== undefined
+
+    // 0. Drain write buffers while the handle is still open. `detachEntered`
+    //    below makes the backend call `writer.close()`, which drains
+    //    asynchronously and would recreate the directory we are about to
+    //    remove; flushing first leaves that close with nothing to write.
+    if (typeof ctx.sessionPersistence.flush === 'function') {
+      try {
+        await ctx.sessionPersistence.flush()
+      } catch (error) {
+        ctx.logger.warn(`session-delete: flush before deleting "${sessionId}" failed: ${messageOf(error)}`)
+      }
+    }
+
     // 1. Detach a live session first: this closes its write handle and emits
     //    `session/disposed`, which the projection cache and search index follow.
-    const live = ctx.sessions.get(sessionId)
     if (live !== undefined) {
       const entry = ctx.sessions.liveEntryFor(live)
       if (entry !== undefined) ctx.sessions.detachEntered(entry)
@@ -92,15 +171,18 @@ export function apply(ctx) {
       if (!workspace.record.sessionIds.includes(sessionId)) continue
       try {
         await workspace.detachSession(sessionId)
-      } catch {
-        // A racing mutation already removed it.
+      } catch (error) {
+        // A racing mutation already removed it; anything else is a real fault.
+        ctx.logger.warn(`session-delete: detaching "${sessionId}" from workspace failed: ${messageOf(error)}`)
       }
     }
+    // Both methods return silently when the id was never accounted there, so a
+    // throw here is a storage fault worth reporting.
     for (const method of ['unarchiveSession', 'unpinSession']) {
       try {
         await ctx.workspaceRegistry[method](sessionId)
-      } catch {
-        // Not accounted there — idempotent for our purpose.
+      } catch (error) {
+        ctx.logger.warn(`session-delete: ${method}("${sessionId}") failed: ${messageOf(error)}`)
       }
     }
 
@@ -110,24 +192,26 @@ export function apply(ctx) {
       ? join(root, '_no-cwd', encodeSegment(sessionId))
       : join(root, projectKey(cwd), encodeSegment(sessionId))
     if (!dir.startsWith(root + sep)) {
+      ctx.logger.warn(`session-delete: refused path outside sessions root: ${dir}`)
       return Response.json({ error: 'refused path outside sessions root' }, { status: 400 })
     }
-    await rm(dir, { recursive: true, force: true })
+    const logMissing = await removeLogDir(dir)
 
     // 4. Rebuild the header index so `sessionKnown`/workspace rows stop
-    //    reporting the id before any restart.
-    try {
-      await ctx.workspaceRegistry.replaceHeaderIndex(await ctx.workspaceRegistry.listStoredHeaders())
-    } catch {
-      // The next startup rebuilds it anyway.
-    }
+    //    reporting the id. Deferred and collapsed so a cascade pays for one
+    //    rebuild instead of one per session.
+    scheduleIndexRebuild()
 
     // 5. Notify every connected client. A live session already published this
     //    through `session/disposed`, but a cold one has no live entry, and the
     //    removal must still reach other tabs. The client handler is idempotent.
     ctx.emit('api-session/removed', sessionId)
 
-    return Response.json({ deleted: true, sessionId })
+    ctx.logger.info(
+      `session-delete: removed "${sessionId}" (cwd=${cwd ?? '<none>'}, live=${wasLive}, log=${logMissing ? 'already-gone' : 'removed'})`,
+    )
+
+    return Response.json({ deleted: true, sessionId, logMissing })
   }
 
   ctx.effect(
