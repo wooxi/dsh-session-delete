@@ -6,8 +6,18 @@ import {
   MenuItemButton,
   Modal,
 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { NS, zh, en, fr } from './locales.js'
 
 const ROUTE = '/api/dsh/session-delete'
+
+/**
+ * Dictionaries live in `src/locales.js`. The namespace is declared on every
+ * slot this plugin registers, so the framework hands the occupant a `t` seat
+ * that re-renders on a locale switch. Copy produced outside a render (the
+ * cancellation errors handed back to the official workspace dialog) goes
+ * through `ctx.locale.bind(NS)` instead.
+ */
+const DICTIONARIES = { zh, en, fr }
 
 /**
  * The menu item lives inside the row menu, which unmounts as soon as the menu
@@ -77,7 +87,7 @@ function workspaceIdFor(ctx, sessionId) {
     ?.workspaceId
 }
 
-function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState }) {
+function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState, t }) {
   const [, setMenuOpen] = useMenuOpenState()
   const title =
     typeof displayTitle === 'string' && displayTitle.trim() !== '' ? displayTitle : sessionId
@@ -89,12 +99,12 @@ function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState }) {
         requestStore.set({ sessionId, title })
       }}
     >
-      删除会话
+      {t('session.menu')}
     </MenuItemButton>
   )
 }
 
-function DeleteSessionDialog({ ctx, request }) {
+function DeleteSessionDialog({ ctx, request, t }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -144,21 +154,21 @@ function DeleteSessionDialog({ ctx, request }) {
   }
 
   return (
-    <Modal open headless title="删除会话" onClose={close} className="dsd-modal">
+    <Modal open headless title={t('session.title')} onClose={close} className="dsd-modal">
       <div className="dsd-panel">
         <header className="dsd-head">
           <span className="dsd-badge" aria-hidden="true">
             <IconTrashOutlineRegular size={16} />
           </span>
           <div className="dsd-heading">
-            <h2 className="dsd-title">删除会话</h2>
-            <p className="dsd-kicker">此操作不可撤销</p>
+            <h2 className="dsd-title">{t('session.title')}</h2>
+            <p className="dsd-kicker">{t('session.kicker')}</p>
           </div>
           <button
             type="button"
             className="dsd-close"
-            aria-label="关闭"
-            title="关闭"
+            aria-label={t('close')}
+            title={t('close')}
             disabled={busy}
             onClick={close}
           >
@@ -167,13 +177,11 @@ function DeleteSessionDialog({ ctx, request }) {
         </header>
 
         <div className="dsd-content">
-          <p className="dsd-question">确定要永久删除这个会话吗？</p>
+          <p className="dsd-question">{t('session.question')}</p>
           <div className="dsd-target" title={request.title}>
             {request.title}
           </div>
-          <p className="dsd-note">
-            会话记录和消息会从本机移除，删除后无法恢复。附件文件按内容去重保留。
-          </p>
+          <p className="dsd-note">{t('session.note')}</p>
           {error !== null ? (
             <p className="dsd-error" role="alert">
               {error}
@@ -183,7 +191,7 @@ function DeleteSessionDialog({ ctx, request }) {
 
         <div className="dsd-actions">
           <Button variant="ghost" disabled={busy} data-modal-autofocus onClick={close}>
-            取消
+            {t('cancel')}
           </Button>
           <Button
             variant="outline"
@@ -192,7 +200,7 @@ function DeleteSessionDialog({ ctx, request }) {
             aria-busy={busy}
             onClick={() => void remove()}
           >
-            {busy ? '正在删除…' : '删除会话'}
+            {busy ? t('busy') : t('session.confirm')}
           </Button>
         </div>
       </div>
@@ -200,7 +208,7 @@ function DeleteSessionDialog({ ctx, request }) {
   )
 }
 
-function DeleteWorkspaceDialog({ ctx, request }) {
+function DeleteWorkspaceDialog({ ctx, request, t }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [total, setTotal] = useState(request.sessionIds.length)
@@ -212,7 +220,7 @@ function DeleteWorkspaceDialog({ ctx, request }) {
     // The official workspace dialog is still awaiting this promise. Rejecting
     // is the only way to release its pending state, so cancellation surfaces
     // there as an ordinary delete error instead of a stuck "deleting…" button.
-    request.reject(new Error('已取消删除工作区'))
+    request.reject(new Error(t('workspace.cancelled')))
   }
 
   const remove = async () => {
@@ -255,21 +263,21 @@ function DeleteWorkspaceDialog({ ctx, request }) {
   }
 
   return (
-    <Modal open headless title="删除工作区" onClose={close} className="dsd-modal">
+    <Modal open headless title={t('workspace.title')} onClose={close} className="dsd-modal">
       <div className="dsd-panel">
         <header className="dsd-head">
           <span className="dsd-badge" aria-hidden="true">
             <IconTrashOutlineRegular size={16} />
           </span>
           <div className="dsd-heading">
-            <h2 className="dsd-title">删除工作区</h2>
-            <p className="dsd-kicker">会同时删除其中的所有会话</p>
+            <h2 className="dsd-title">{t('workspace.title')}</h2>
+            <p className="dsd-kicker">{t('workspace.kicker')}</p>
           </div>
           <button
             type="button"
             className="dsd-close"
-            aria-label="关闭"
-            title="关闭"
+            aria-label={t('close')}
+            title={t('close')}
             disabled={busy}
             onClick={close}
           >
@@ -279,18 +287,15 @@ function DeleteWorkspaceDialog({ ctx, request }) {
 
         <div className="dsd-content">
           <p className="dsd-question">
-            确定要删除“{request.title}”及其中的 {total} 个会话吗？
+            {t('workspace.question', { title: request.title, count: total })}
           </p>
           <div className="dsd-target" title={request.title}>
             {request.title}
           </div>
-          <p className="dsd-note">
-            工作区会从列表中移除，文件夹本身保留；其中的会话记录和消息都会永久删除，无法恢复。
-            附件文件按内容去重保留。
-          </p>
+          <p className="dsd-note">{t('workspace.note')}</p>
           {busy ? (
             <p className="dsd-progress" role="status">
-              正在删除会话…（剩余 {remaining} 个）
+              {t('progress.remaining', { remaining })}
             </p>
           ) : null}
           {error !== null ? (
@@ -302,7 +307,7 @@ function DeleteWorkspaceDialog({ ctx, request }) {
 
         <div className="dsd-actions">
           <Button variant="ghost" disabled={busy} data-modal-autofocus onClick={close}>
-            取消
+            {t('cancel')}
           </Button>
           <Button
             variant="outline"
@@ -311,7 +316,11 @@ function DeleteWorkspaceDialog({ ctx, request }) {
             aria-busy={busy}
             onClick={() => void remove()}
           >
-            {busy ? '正在删除…' : total > 0 ? `删除工作区及 ${total} 个会话` : '删除工作区'}
+            {busy
+              ? t('busy')
+              : total > 0
+                ? t('workspace.confirmWithCount', { count: total })
+                : t('workspace.confirm')}
           </Button>
         </div>
       </div>
@@ -466,7 +475,7 @@ const CSS = `
 }
 `
 
-export const inject = ['slots', 'sessions', 'workspaces']
+export const inject = ['slots', 'sessions', 'workspaces', 'locale']
 
 export function apply(ctx) {
   ctx.effect(
@@ -480,19 +489,25 @@ export function apply(ctx) {
     'session-delete: styles',
   )
 
+  // Registering the dictionaries keeps the copy in the Client locale service,
+  // so it follows Settings → General and switches without a reload. The
+  // disposer returned by `register` is the effect's cleanup.
+  ctx.effect(() => ctx.locale.register(NS, DICTIONARIES), 'session-delete: dictionaries')
+
   ctx.slots.inject('sidebar.workspaces.session.menu.item', function* () {
     yield ctx.slots.register(
       {
         name: 'sidebar.workspaces.session.menu.item',
         id: 'delete',
         order: 500,
+        locale: NS,
       },
       DeleteSessionMenuItem,
     )
   })
 
   ctx.slots.inject('shell.overlay', function* () {
-    function DeleteOverlay() {
+    function DeleteOverlay({ t }) {
       const request = useSyncExternalStore(requestStore.subscribe, requestStore.get)
       if (request === null) return null
       if (request.kind === 'workspace') {
@@ -501,6 +516,7 @@ export function apply(ctx) {
             key={request.workspaceId}
             ctx={ctx}
             request={request}
+            t={t}
           />
         )
       }
@@ -509,6 +525,7 @@ export function apply(ctx) {
           key={request.sessionId}
           ctx={ctx}
           request={request}
+          t={t}
         />
       )
     }
@@ -518,6 +535,7 @@ export function apply(ctx) {
         name: 'shell.overlay',
         id: 'session-delete',
         order: 500,
+        locale: NS,
       },
       DeleteOverlay,
     )

@@ -2,6 +2,8 @@
 
 在 DeepSeek Harness（dsh）侧栏中**永久删除**会话：带完整的确认弹窗，删除后不整页刷新。
 
+[English](README.md) | 中文 | [Français](README.fr.md)
+
 DSH 官方只提供「归档」，没有「删除」。本插件补上这一环：移除会话记录、从所有工作区解绑、关闭 live 句柄，并删除磁盘上的会话日志目录。
 
 ![侧栏菜单中的删除会话入口](assets/sidebar-menu.png)
@@ -48,6 +50,17 @@ dsh plugin remove dsh-plugin-session-delete
 - 仅 Web 客户端（`dsh.client.platform: "web"`）
 - Node.js `>=20`
 
+## 多语言
+
+弹窗文案不是硬编码的：插件通过 DSH Client locale 服务注册 `sessionDelete` 命名空间，并在自己注册的 slot 上声明该命名空间，因此所有文案跟随 **设置 → 通用** 中选择的语言，切换语言无需刷新页面。
+
+| 语言 | 覆盖 |
+| --- | --- |
+| `zh` | 完整 |
+| `en` | 完整 |
+| `fr` | 完整 |
+| 其他 | 回退到英文 |
+
 ## 实现说明
 
 **Host**（`index.js`）注册 `POST /api/dsh/session-delete`：
@@ -58,7 +71,7 @@ dsh plugin remove dsh-plugin-session-delete
 4. 删除 dsh sessions 根目录下的会话日志目录；删除前校验解析后的路径仍在根目录内。
 5. 重建会话 header 索引，并广播 `api-session/removed`。
 
-**Client**（`src/client.jsx`）注册菜单项，并通过 `shell.overlay` slot 渲染弹窗。菜单项会在弹窗打开前关闭，弹窗由 overlay 持有，因此不受菜单卸载影响。删除成功后调用 `ctx.sessions.refresh()`，再根据情况通过 `uiWorkspace.openWorkspace` 保留工作区，或清空主视图。
+**Client**（`src/client.jsx`）注册菜单项，并通过 `shell.overlay` slot 渲染弹窗。菜单项会在弹窗打开前关闭，弹窗由 overlay 持有，因此不受菜单卸载影响。删除成功后调用 `ctx.sessions.refresh()`，再根据情况通过 `uiWorkspace.openWorkspace` 保留工作区，或清空主视图。界面文案来自 `src/locales.js`，通过框架注入到声明了 locale 的 slot 的 `t` seat 传给组件。
 
 删除工作区时会包装 `ctx.workspaces.delete`：如果工作区下仍有关联会话，先打开级联确认弹窗，确认后通过同一个 host 路由逐个删除会话、刷新会话列表，再调用原始的 `workspaces.delete`。因此文件夹会保留，但会话记录会被永久删除。
 
@@ -76,7 +89,7 @@ npm install
 npm run build
 ```
 
-`npm run build` 会把 `src/client.jsx` 打包成 dsh 浏览器模块所需的 envelope（`client.js`）。host 入口是普通 ESM，不参与打包。
+`npm run build` 会把 `src/client.jsx`（及其引用的 `src/locales.js`）打包成 dsh 浏览器模块所需的 envelope（`client.js`）。host 入口是普通 ESM，不参与打包。
 
 ## License
 

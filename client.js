@@ -30,8 +30,65 @@ __export(client_exports, {
 module.exports = __toCommonJS(client_exports);
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+
+// src/locales.js
+var NS = "sessionDelete";
+var zh = {
+  "session.menu": "\u5220\u9664\u4F1A\u8BDD",
+  "session.title": "\u5220\u9664\u4F1A\u8BDD",
+  "session.kicker": "\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500",
+  "session.question": "\u786E\u5B9A\u8981\u6C38\u4E45\u5220\u9664\u8FD9\u4E2A\u4F1A\u8BDD\u5417\uFF1F",
+  "session.note": "\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u4F1A\u4ECE\u672C\u673A\u79FB\u9664\uFF0C\u5220\u9664\u540E\u65E0\u6CD5\u6062\u590D\u3002\u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002",
+  "session.confirm": "\u5220\u9664\u4F1A\u8BDD",
+  "workspace.title": "\u5220\u9664\u5DE5\u4F5C\u533A",
+  "workspace.kicker": "\u4F1A\u540C\u65F6\u5220\u9664\u5176\u4E2D\u7684\u6240\u6709\u4F1A\u8BDD",
+  "workspace.question": "\u786E\u5B9A\u8981\u5220\u9664\u201C{title}\u201D\u53CA\u5176\u4E2D\u7684 {count} \u4E2A\u4F1A\u8BDD\u5417\uFF1F",
+  "workspace.note": "\u5DE5\u4F5C\u533A\u4F1A\u4ECE\u5217\u8868\u4E2D\u79FB\u9664\uFF0C\u6587\u4EF6\u5939\u672C\u8EAB\u4FDD\u7559\uFF1B\u5176\u4E2D\u7684\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u90FD\u4F1A\u6C38\u4E45\u5220\u9664\uFF0C\u65E0\u6CD5\u6062\u590D\u3002\u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002",
+  "workspace.confirm": "\u5220\u9664\u5DE5\u4F5C\u533A",
+  "workspace.confirmWithCount": "\u5220\u9664\u5DE5\u4F5C\u533A\u53CA {count} \u4E2A\u4F1A\u8BDD",
+  "workspace.cancelled": "\u5DF2\u53D6\u6D88\u5220\u9664\u5DE5\u4F5C\u533A",
+  "progress.remaining": "\u6B63\u5728\u5220\u9664\u4F1A\u8BDD\u2026\uFF08\u5269\u4F59 {remaining} \u4E2A\uFF09",
+  "busy": "\u6B63\u5728\u5220\u9664\u2026"
+};
+var en = {
+  "session.menu": "Delete session",
+  "session.title": "Delete session",
+  "session.kicker": "This cannot be undone",
+  "session.question": "Permanently delete this session?",
+  "session.note": "The session record and its messages are removed from this machine; they cannot be recovered. Attachment files are kept, deduplicated by content.",
+  "session.confirm": "Delete session",
+  "workspace.title": "Delete workspace",
+  "workspace.kicker": "Also deletes every session in it",
+  "workspace.question": "Delete \u201C{title}\u201D and its {count} sessions?",
+  "workspace.note": "The workspace is removed from the list and the folder itself is kept. The session records and messages in it are permanently deleted and cannot be recovered. Attachment files are kept, deduplicated by content.",
+  "workspace.confirm": "Delete workspace",
+  "workspace.confirmWithCount": "Delete workspace and {count} sessions",
+  "workspace.cancelled": "Workspace deletion cancelled",
+  "progress.remaining": "Deleting sessions\u2026 ({remaining} left)",
+  "busy": "Deleting\u2026"
+};
+var fr = {
+  "session.menu": "Supprimer la session",
+  "session.title": "Supprimer la session",
+  "session.kicker": "Cette action est irr\xE9versible",
+  "session.question": "Supprimer d\xE9finitivement cette session ?",
+  "session.note": "L\u2019enregistrement de la session et ses messages sont effac\xE9s de cette machine ; ils ne pourront pas \xEAtre restaur\xE9s. Les fichiers joints sont conserv\xE9s, d\xE9dupliqu\xE9s par contenu.",
+  "session.confirm": "Supprimer la session",
+  "workspace.title": "Supprimer l\u2019espace de travail",
+  "workspace.kicker": "Supprime aussi toutes ses sessions",
+  "workspace.question": "Supprimer \xAB {title} \xBB et ses {count} sessions ?",
+  "workspace.note": "L\u2019espace de travail est retir\xE9 de la liste et le dossier lui-m\xEAme est conserv\xE9. Les enregistrements de sessions et leurs messages sont d\xE9finitivement supprim\xE9s et ne pourront pas \xEAtre restaur\xE9s. Les fichiers joints sont conserv\xE9s, d\xE9dupliqu\xE9s par contenu.",
+  "workspace.confirm": "Supprimer l\u2019espace de travail",
+  "workspace.confirmWithCount": "Supprimer l\u2019espace de travail et ses {count} sessions",
+  "workspace.cancelled": "Suppression de l\u2019espace de travail annul\xE9e",
+  "progress.remaining": "Suppression des sessions\u2026 ({remaining} restantes)",
+  "busy": "Suppression\u2026"
+};
+
+// src/client.jsx
 var import_jsx_runtime = require("react/jsx-runtime");
 var ROUTE = "/api/dsh/session-delete";
+var DICTIONARIES = { zh, en, fr };
 function createRequestStore() {
   let current = null;
   const listeners = /* @__PURE__ */ new Set();
@@ -84,7 +141,7 @@ function workspaceIdFor(ctx, sessionId) {
   const snapshot = ctx.get("workspaces")?.list?.getSnapshot?.();
   return snapshot?.items?.find((workspace) => workspace.sessionIds.includes(sessionId))?.workspaceId;
 }
-function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState }) {
+function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState, t }) {
   const [, setMenuOpen] = useMenuOpenState();
   const title = typeof displayTitle === "string" && displayTitle.trim() !== "" ? displayTitle : sessionId;
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
@@ -95,11 +152,11 @@ function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState }) {
         setMenuOpen(false);
         requestStore.set({ sessionId, title });
       },
-      children: "\u5220\u9664\u4F1A\u8BDD"
+      children: t("session.menu")
     }
   );
 }
-function DeleteSessionDialog({ ctx, request }) {
+function DeleteSessionDialog({ ctx, request, t }) {
   const [busy, setBusy] = (0, import_react.useState)(false);
   const [error, setError] = (0, import_react.useState)(null);
   const close = () => {
@@ -136,20 +193,20 @@ function DeleteSessionDialog({ ctx, request }) {
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, { open: true, headless: true, title: "\u5220\u9664\u4F1A\u8BDD", onClose: close, className: "dsd-modal", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-panel", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, { open: true, headless: true, title: t("session.title"), onClose: close, className: "dsd-modal", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-panel", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", { className: "dsd-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "dsd-badge", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconTrashOutlineRegular, { size: 16 }) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-heading", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "dsd-title", children: "\u5220\u9664\u4F1A\u8BDD" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-kicker", children: "\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "dsd-title", children: t("session.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-kicker", children: t("session.kicker") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "button",
         {
           type: "button",
           className: "dsd-close",
-          "aria-label": "\u5173\u95ED",
-          title: "\u5173\u95ED",
+          "aria-label": t("close"),
+          title: t("close"),
           disabled: busy,
           onClick: close,
           children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutlineRegular, { size: 14 })
@@ -157,13 +214,13 @@ function DeleteSessionDialog({ ctx, request }) {
       )
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-content", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-question", children: "\u786E\u5B9A\u8981\u6C38\u4E45\u5220\u9664\u8FD9\u4E2A\u4F1A\u8BDD\u5417\uFF1F" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-question", children: t("session.question") }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "dsd-target", title: request.title, children: request.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u4F1A\u4ECE\u672C\u673A\u79FB\u9664\uFF0C\u5220\u9664\u540E\u65E0\u6CD5\u6062\u590D\u3002\u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: t("session.note") }),
       error !== null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-error", role: "alert", children: error }) : null
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-actions", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Button, { variant: "ghost", disabled: busy, "data-modal-autofocus": true, onClick: close, children: "\u53D6\u6D88" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Button, { variant: "ghost", disabled: busy, "data-modal-autofocus": true, onClick: close, children: t("cancel") }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         import_dsh_client_ui_primitives.Button,
         {
@@ -172,13 +229,13 @@ function DeleteSessionDialog({ ctx, request }) {
           disabled: busy,
           "aria-busy": busy,
           onClick: () => void remove(),
-          children: busy ? "\u6B63\u5728\u5220\u9664\u2026" : "\u5220\u9664\u4F1A\u8BDD"
+          children: busy ? t("busy") : t("session.confirm")
         }
       )
     ] })
   ] }) });
 }
-function DeleteWorkspaceDialog({ ctx, request }) {
+function DeleteWorkspaceDialog({ ctx, request, t }) {
   const [busy, setBusy] = (0, import_react.useState)(false);
   const [error, setError] = (0, import_react.useState)(null);
   const [total, setTotal] = (0, import_react.useState)(request.sessionIds.length);
@@ -186,7 +243,7 @@ function DeleteWorkspaceDialog({ ctx, request }) {
   const close = () => {
     if (busy) return;
     requestStore.set(null);
-    request.reject(new Error("\u5DF2\u53D6\u6D88\u5220\u9664\u5DE5\u4F5C\u533A"));
+    request.reject(new Error(t("workspace.cancelled")));
   };
   const remove = async () => {
     if (busy) return;
@@ -221,20 +278,20 @@ function DeleteWorkspaceDialog({ ctx, request }) {
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, { open: true, headless: true, title: "\u5220\u9664\u5DE5\u4F5C\u533A", onClose: close, className: "dsd-modal", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-panel", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, { open: true, headless: true, title: t("workspace.title"), onClose: close, className: "dsd-modal", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-panel", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", { className: "dsd-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "dsd-badge", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconTrashOutlineRegular, { size: 16 }) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-heading", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "dsd-title", children: "\u5220\u9664\u5DE5\u4F5C\u533A" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-kicker", children: "\u4F1A\u540C\u65F6\u5220\u9664\u5176\u4E2D\u7684\u6240\u6709\u4F1A\u8BDD" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "dsd-title", children: t("workspace.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-kicker", children: t("workspace.kicker") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "button",
         {
           type: "button",
           className: "dsd-close",
-          "aria-label": "\u5173\u95ED",
-          title: "\u5173\u95ED",
+          "aria-label": t("close"),
+          title: t("close"),
           disabled: busy,
           onClick: close,
           children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutlineRegular, { size: 14 })
@@ -242,24 +299,14 @@ function DeleteWorkspaceDialog({ ctx, request }) {
       )
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-content", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "dsd-question", children: [
-        "\u786E\u5B9A\u8981\u5220\u9664\u201C",
-        request.title,
-        "\u201D\u53CA\u5176\u4E2D\u7684 ",
-        total,
-        " \u4E2A\u4F1A\u8BDD\u5417\uFF1F"
-      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-question", children: t("workspace.question", { title: request.title, count: total }) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "dsd-target", title: request.title, children: request.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: "\u5DE5\u4F5C\u533A\u4F1A\u4ECE\u5217\u8868\u4E2D\u79FB\u9664\uFF0C\u6587\u4EF6\u5939\u672C\u8EAB\u4FDD\u7559\uFF1B\u5176\u4E2D\u7684\u4F1A\u8BDD\u8BB0\u5F55\u548C\u6D88\u606F\u90FD\u4F1A\u6C38\u4E45\u5220\u9664\uFF0C\u65E0\u6CD5\u6062\u590D\u3002 \u9644\u4EF6\u6587\u4EF6\u6309\u5185\u5BB9\u53BB\u91CD\u4FDD\u7559\u3002" }),
-      busy ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "dsd-progress", role: "status", children: [
-        "\u6B63\u5728\u5220\u9664\u4F1A\u8BDD\u2026\uFF08\u5269\u4F59 ",
-        remaining,
-        " \u4E2A\uFF09"
-      ] }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-note", children: t("workspace.note") }),
+      busy ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-progress", role: "status", children: t("progress.remaining", { remaining }) }) : null,
       error !== null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsd-error", role: "alert", children: error }) : null
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "dsd-actions", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Button, { variant: "ghost", disabled: busy, "data-modal-autofocus": true, onClick: close, children: "\u53D6\u6D88" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Button, { variant: "ghost", disabled: busy, "data-modal-autofocus": true, onClick: close, children: t("cancel") }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         import_dsh_client_ui_primitives.Button,
         {
@@ -268,7 +315,7 @@ function DeleteWorkspaceDialog({ ctx, request }) {
           disabled: busy,
           "aria-busy": busy,
           onClick: () => void remove(),
-          children: busy ? "\u6B63\u5728\u5220\u9664\u2026" : total > 0 ? `\u5220\u9664\u5DE5\u4F5C\u533A\u53CA ${total} \u4E2A\u4F1A\u8BDD` : "\u5220\u9664\u5DE5\u4F5C\u533A"
+          children: busy ? t("busy") : total > 0 ? t("workspace.confirmWithCount", { count: total }) : t("workspace.confirm")
         }
       )
     ] })
@@ -420,7 +467,7 @@ var CSS = `
   background: var(--dsw-alias-interactive-bg-hover-danger);
 }
 `;
-var inject = ["slots", "sessions", "workspaces"];
+var inject = ["slots", "sessions", "workspaces", "locale"];
 function apply(ctx) {
   ctx.effect(
     () => {
@@ -432,18 +479,20 @@ function apply(ctx) {
     },
     "session-delete: styles"
   );
+  ctx.effect(() => ctx.locale.register(NS, DICTIONARIES), "session-delete: dictionaries");
   ctx.slots.inject("sidebar.workspaces.session.menu.item", function* () {
     yield ctx.slots.register(
       {
         name: "sidebar.workspaces.session.menu.item",
         id: "delete",
-        order: 500
+        order: 500,
+        locale: NS
       },
       DeleteSessionMenuItem
     );
   });
   ctx.slots.inject("shell.overlay", function* () {
-    function DeleteOverlay() {
+    function DeleteOverlay({ t }) {
       const request = (0, import_react.useSyncExternalStore)(requestStore.subscribe, requestStore.get);
       if (request === null) return null;
       if (request.kind === "workspace") {
@@ -451,7 +500,8 @@ function apply(ctx) {
           DeleteWorkspaceDialog,
           {
             ctx,
-            request
+            request,
+            t
           },
           request.workspaceId
         );
@@ -460,7 +510,8 @@ function apply(ctx) {
         DeleteSessionDialog,
         {
           ctx,
-          request
+          request,
+          t
         },
         request.sessionId
       );
@@ -469,7 +520,8 @@ function apply(ctx) {
       {
         name: "shell.overlay",
         id: "session-delete",
-        order: 500
+        order: 500,
+        locale: NS
       },
       DeleteOverlay
     );

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Route every piece of UI copy through the DSH Client locale service instead of hard-coded Chinese strings. The plugin registers a `sessionDelete` namespace with **Chinese, English, and French** dictionaries, so the labels follow the language picked in Settings → General and switch without a reload. Chinese and English keep the previous wording.
+- Add a French README (`README.fr.md`).
+
 ## 0.2.0
 
 - Deleting a workspace now offers a cascade confirmation when the workspace still owns sessions. Confirming permanently deletes every session in it through the existing host route, then removes the workspace registration. The folder on disk is kept.

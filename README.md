@@ -2,6 +2,8 @@
 
 Permanently delete a DeepSeek Harness (dsh) session from the sidebar — with a proper confirmation dialog and no full-page reload.
 
+English | [中文](README.zh.md) | [Français](README.fr.md)
+
 DSH ships *archive*, not *delete*. This plugin fills that gap: it removes the session record, detaches it from every workspace, closes any live handle, and deletes the on-disk log directory.
 
 ![Delete session in the sidebar menu](assets/sidebar-menu.png)
@@ -48,6 +50,17 @@ dsh plugin remove dsh-plugin-session-delete
 - Web client only (`dsh.client.platform: "web"`)
 - Node.js `>=20`
 
+## Languages
+
+The dialog copy is not hard-coded: the plugin registers a `sessionDelete` namespace with the DSH Client locale service and declares that namespace on the slots it owns, so every label follows the language selected in **Settings → General** and switches without a reload.
+
+| Locale | Coverage |
+| --- | --- |
+| `zh` | Complete |
+| `en` | Complete |
+| `fr` | Complete |
+| other | Falls back to English |
+
 ## How it works
 
 **Host** (`index.js`) registers `POST /api/dsh/session-delete`. The route:
@@ -58,7 +71,7 @@ dsh plugin remove dsh-plugin-session-delete
 4. Removes the session's log directory under the dsh sessions root. The resolved path is checked to stay inside that root.
 5. Rebuilds the stored-session header index and emits `api-session/removed`.
 
-**Client** (`src/client.jsx`) adds the menu item and renders the dialog through the `shell.overlay` slot. The menu closes before the dialog opens, so the dialog is owned by the overlay and survives menu unmounting. After a successful delete it calls `ctx.sessions.refresh()`, then either keeps the workspace (via `uiWorkspace.openWorkspace`) or clears the main view.
+**Client** (`src/client.jsx`) adds the menu item and renders the dialog through the `shell.overlay` slot. The menu closes before the dialog opens, so the dialog is owned by the overlay and survives menu unmounting. After a successful delete it calls `ctx.sessions.refresh()`, then either keeps the workspace (via `uiWorkspace.openWorkspace`) or clears the main view. UI copy comes from `src/locales.js` and reaches the components through the `t` seat the framework injects into locale-declaring slots.
 
 Workspace deletion wraps `ctx.workspaces.delete`. When the workspace still owns sessions, the wrapper opens a cascade confirmation before the official deletion runs. Confirming deletes each session through the same host route, refreshes the session list, and then calls the original `workspaces.delete` — so the folder stays in place while the sessions themselves are gone.
 
@@ -76,7 +89,7 @@ npm install
 npm run build
 ```
 
-`npm run build` bundles `src/client.jsx` into the browser module envelope dsh expects (`client.js`). The host entry is plain ESM and is not bundled.
+`npm run build` bundles `src/client.jsx` (and its `src/locales.js` import) into the browser module envelope dsh expects (`client.js`). The host entry is plain ESM and is not bundled.
 
 ## License
 
